@@ -1,39 +1,64 @@
-// Get references to DOM elements
-const taskInput = document.getElementById('taskInput');
-const addTaskBtn = document.getElementById('addTaskBtn');
-const taskList = document.getElementById('taskList');
+// Retrieve existing tasks from local storage or initialize an empty array
+let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
 
-// Add task function
+// Function to render tasks
+function renderTasks() {
+    const taskList = document.getElementById('taskList');
+    taskList.innerHTML = '';
+    tasks.forEach((task, index) => {
+        const listItem = document.createElement('li');
+        listItem.innerHTML = `
+            <input type="checkbox" id="task${index}" ${task.completed ? 'checked' : ''}>
+            <label for="task${index}" ${task.completed ? 'class="completed"' : ''}>${task.name}</label>
+            <button class="deleteBtn" data-index="${index}">Delete</button>
+        `;
+        taskList.appendChild(listItem);
+    });
+    updateLocalStorage();
+}
+
+// Function to add a new task
 function addTask() {
-    const taskText = taskInput.value.trim();
-    if (taskText !== '') {
-        const taskItem = document.createElement('li');
-        taskItem.textContent = taskText;
-
-        // Add click event listener to mark task as completed
-        taskItem.addEventListener('click', () => {
-            taskItem.classList.toggle('completed');
-        });
-
-        // Add delete button
-        const deleteButton = document.createElement('button');
-        deleteButton.textContent = '❌';
-        deleteButton.addEventListener('click', () => {
-            taskItem.remove();
-        });
-        taskItem.appendChild(deleteButton);
-
-        taskList.appendChild(taskItem);
-        taskInput.value = ''; // Clear input field
+    const taskInput = document.getElementById('taskInput');
+    const taskName = taskInput.value.trim();
+    if (taskName !== '') {
+        tasks.push({ name: taskName, completed: false });
+        taskInput.value = '';
+        renderTasks();
     }
 }
 
-// Add task event listener
-addTaskBtn.addEventListener('click', addTask);
+// Function to toggle task completion
+function toggleTaskCompletion(index) {
+    tasks[index].completed = !tasks[index].completed;
+    renderTasks();
+}
 
-// Handle pressing Enter key to add task
-taskInput.addEventListener('keypress', (event) => {
-    if (event.key === 'Enter') {
-        addTask();
+// Function to delete a task
+function deleteTask(index) {
+    tasks.splice(index, 1);
+    renderTasks();
+}
+
+// Function to update local storage
+function updateLocalStorage() {
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+}
+
+// Event listeners
+document.getElementById('addTaskBtn').addEventListener('click', addTask);
+document.getElementById('taskList').addEventListener('change', (e) => {
+    if (e.target.type === 'checkbox') {
+        const index = parseInt(e.target.id.replace('task', ''));
+        toggleTaskCompletion(index);
     }
 });
+document.getElementById('taskList').addEventListener('click', (e) => {
+    if (e.target.classList.contains('deleteBtn')) {
+        const index = parseInt(e.target.getAttribute('data-index'));
+        deleteTask(index);
+    }
+});
+
+// Initial rendering
+renderTasks();
